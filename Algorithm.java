@@ -7,43 +7,49 @@ import java.util.ArrayList;
 
 public class Algorithm {
 
-    public static boolean exactCover(int[][] matrix){
+    public static int[] exactCover(int[][] matrix){
         
-        //STEP 1:
-        //if the matrix is empty terminate the function successfully
-        if(matrix[0].length == 1){
-            
-            return true;
-            //terminate successfully ?
+        int[] partialSolution = new int[0];
+        int[] remainingRows = check_if_solved(matrix);
+
+        if (remainingRows.length > 0) {
+			// add the remaining rows to the partialSolution
+			partialSolution = add(partialSolution, remainingRows);
+			return partialSolution; // success!
+		}
+
+		if (matrix.length == 0){
+			return new int[0]; // failure, abandon branch
         }
-        else{
-            //STEP 2
-            //open an array the length of the amount of columns and store the amount of 1s in each column
-            Integer[] columnsMinCalc = new Integer[matrix[0].length - 1];
-            //traverse the matrix and find the amount of 1s in each column
-            for(int c = 1; c < matrix[0].length; c++){
-                int count = 0;
-                for(int r = 1; r < matrix.length; r++){
-                    if(matrix[r][c] == 1){
-                        count++;
-                    }
-                    columnsMinCalc[c - 1]= count;
+
+    
+        //STEP 2
+        //open an array the length of the amount of columns and store the amount of 1s in each column
+        int[] columnsMinCalc = new int[matrix[0].length - 1];
+        //traverse the matrix and find the amount of 1s in each column
+        for(int c = 1; c < matrix[0].length; c++){
+            int count = 0;
+            for(int r = 0; r < matrix.length; r++){
+                if(matrix[r][c] == 1){
+                    count++;
                 }
+                columnsMinCalc[c - 1]= count;
             }
+            Arrays.sort(columnsMinCalc);
 
             //find the minimum of 1s inside the columns array
-            int min = Collections.min(Arrays.asList(columnsMinCalc));
+            int min = columnsMinCalc[0];
             
             if(min == 0){
                 
-                return false;
+                return new int[0];
             }
 
             //find the first column containing the minimum of 1's out of af all columns of the matrix deterministically
             int selectedColumn = 0;
             for(int i = 0; i < columnsMinCalc.length; i++){
                 if(columnsMinCalc[i] == min){
-                    selectedColumn = i + 1;
+                    selectedColumn = columnsMinCalc[i];
                     break;
                 }
             }
@@ -61,14 +67,15 @@ public class Algorithm {
 
             //for each relevant row we check wether it results in exact Cover
             for(int i = 0; i < relevantRows.length; i++){
+                int[] branch = { relevantRows[i] };
                 
-                int row = relevantRows[i];
+                partialSolution = add(partialSolution, branch);                
                 
                 //find out the columns that are to be deleted from the matrix and store them in an array
                 Set<Integer> columnsDelete = new HashSet<Integer> ();
-                for(int j= 1; i < matrix[row].length; j++){
-                    if(matrix[row][i] == 1){
-                    columnsDelete.add(i);
+                for(int j= 1; i < matrix[relevantRows[i]].length; j++){
+                    if(matrix[relevantRows[i]][i] == 1){
+                    columnsDelete.add(j);
                     }
                 }
                 Integer[] columns2Bremoved = columnsDelete.toArray(new Integer[0]);
@@ -76,40 +83,45 @@ public class Algorithm {
                 //find out the rows to be deleted from the matrix and store them in an array
                 Set<Integer> rowsDelete = new HashSet<Integer> ();
                 for(int j = 0; j < columns2Bremoved.length; j++){
-                    for(int k = 1; k < matrix.length; k++){
-                        if(matrix[j][columns2Bremoved[i]] == 1){
+                    for(int k = 0; k < matrix.length; k++){
+                        if(matrix[columns2Bremoved[j]][k] == 1){
                         rowsDelete.add(j);
                         }
                     }
                 }
                 Integer[] rows2Bremoved = rowsDelete.toArray(new Integer[0]);
            
-                //create new matrix that is removed by the rows that are to be deleted
-                int[][] newMatrix1 = remove_row(matrix, rows2Bremoved[0]);
-                for(int j = 1; j < rows2Bremoved.length; j++){
-                    newMatrix1 = remove_row(newMatrix1, rows2Bremoved[j]);
+                int[][] newMatrix = matrix.clone();
+                //create new matrix that is reduced by the rows that are to be deleted
+                for(int j = 0; j < rows2Bremoved.length; j++){
+                    newMatrix = remove_row(newMatrix, rows2Bremoved[j]);
                 }
                 
                 //create a new matrix that is reduced by the rows and columns that are to be deleted
-                int[][] newMatrixFinal = remove_column(newMatrix1, columns2Bremoved[0]);
-                for(int j = 1; j < columns2Bremoved.length; j++){
-                    newMatrixFinal = remove_column(newMatrixFinal, columns2Bremoved[i]);
+                int[][] newMatrixFinal = newMatrix.clone();
+                for(int j = 0; j < columns2Bremoved.length; j++){
+                    newMatrixFinal = remove_column(newMatrixFinal, columns2Bremoved[j]);
                 }
+                
+                int[] newPartialSolution = exactCover(newMatrixFinal);
+
+                if (newPartialSolution.length != 0) {
+					partialSolution = add(partialSolution, newPartialSolution);
+					return partialSolution;
+				}
+
+                // remove row r we added earlier
+				partialSolution = remove_last_element(partialSolution);
+                
            
-           
-                if(exactCover(newMatrixFinal)){
-                    System.out.print(matrix[relevantRows[i]][0]);
-                }
-            
-            
-            
+                
             
             }
         
                 
                 
         }
-        return false;
+        return new int[0];
     }
 
     //method for removing a row of a matrix
@@ -149,21 +161,59 @@ public class Algorithm {
     
         return out;
     }
+
+    public static int[] add(int[] A, int[] B) {
+		int[] C = new int[A.length + B.length];
+
+		for (int i = 0; i < A.length; i++) {
+			C[i] = A[i];
+		}
+		for (int i = 0; i < B.length; i++) {
+			C[i + A.length] = B[i];
+		}
+
+		return C;
+	}
+    
+    private static int[] check_if_solved(int[][] matrix) {
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[0].length; j++) {
+				if (matrix[i][j] == 0)
+					return new int[0];
+			}
+		}
+
+		int[] remainingRows = new int[matrix.length];
+
+		for (int i = 0; i < matrix.length; i++) {
+			remainingRows[i] = matrix[i][0];
+		}
+
+		return remainingRows;
+	}
+
+    public static int[] remove_last_element(int[] array) {
+		int[] newArray = new int[array.length - 1];
+
+		for (int i = 0; i < newArray.length; i++) {
+			newArray[i] = array[i];
+		}
+		return newArray;
+	}
     
     public static void main(String[] args) {
         int[][] matrix = {
-            { 0 , 1 , 2 , 3 , 4 },
             { 1 , 1 , 0 , 0 , 1 },
             { 2 , 1 , 1 , 1 , 0 },
             { 3 , 0 , 1 , 1 , 0 },
             { 4 , 0 , 0 , 1 , 1 }
         };
+        
+        int[] answers = exactCover(matrix);
 
-        if(exactCover(matrix)){
-            System.out.print("Exactcover is provided by: ");
-        }
-        else{
-            System.out.println("No exact cover possible");
+        for(int i = 0; i < answers.length; i++){
+            System.out.print(answers[i] + " ");
+            System.out.println();
         }
         
     }
