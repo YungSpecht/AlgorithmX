@@ -8,7 +8,8 @@ import java.util.ArrayList;
 public class Algorithm {
 
     public static int[] exactCover(int[][] matrix){
-        
+
+
         int[] partialSolution = new int[0];
         int[] remainingRows = check_if_solved(matrix);
 
@@ -22,6 +23,13 @@ public class Algorithm {
 			return new int[0]; // failure, abandon branch
         }
 
+        for(int i = 0; i < matrix.length; i++){
+            for(int j = 0; j < matrix[0].length; j++){
+                System.out.print(matrix[i][j] + " ");
+            }
+            System.out.println();
+
+        }
     
         //STEP 2
         //open an array the length of the amount of columns and store the amount of 1s in each column
@@ -39,6 +47,7 @@ public class Algorithm {
 
             //find the minimum of 1s inside the columns array
             int min = columnsMinCalc[0];
+            System.out.println(min);
             
             if(min == 0){
                 
@@ -78,7 +87,7 @@ public class Algorithm {
                     columnsDelete.add(j);
                     }
                 }
-                Integer[] columns2Bremoved = columnsDelete.toArray(new Integer[0]);
+                int[]columns2Bremoved = toInt(columnsDelete);
                 
                 //find out the rows to be deleted from the matrix and store them in an array
                 Set<Integer> rowsDelete = new HashSet<Integer> ();
@@ -89,19 +98,14 @@ public class Algorithm {
                         }
                     }
                 }
-                Integer[] rows2Bremoved = rowsDelete.toArray(new Integer[0]);
+                int[]rows2Bremoved = toInt(rowsDelete);
+                
            
                 int[][] newMatrix = matrix.clone();
                 //create new matrix that is reduced by the rows that are to be deleted
-                for(int j = 0; j < rows2Bremoved.length; j++){
-                    newMatrix = remove_row(newMatrix, rows2Bremoved[j]);
-                }
-                
-                //create a new matrix that is reduced by the rows and columns that are to be deleted
-                int[][] newMatrixFinal = newMatrix.clone();
-                for(int j = 0; j < columns2Bremoved.length; j++){
-                    newMatrixFinal = remove_column(newMatrixFinal, columns2Bremoved[j]);
-                }
+                int[][]newMatrix1 = remove_row(newMatrix, rows2Bremoved);
+
+                int[][]newMatrixFinal = remove_col(newMatrix1, columns2Bremoved);
                 
                 int[] newPartialSolution = exactCover(newMatrixFinal);
 
@@ -124,43 +128,70 @@ public class Algorithm {
         return new int[0];
     }
 
-    //method for removing a row of a matrix
+    public static int[] toInt(Set<Integer> set) {
+        int[] a = new int[set.size()];
+        int i = 0;
+        for (Integer val : set) a[i++] = val;
+        return a;
+      }
+
     public static int[][] remove_row(int in[][], int row) {
-        if (row > in.length - 1 || row < 0)
-            return in; // row out of bounds
-    
-        int[][] out = new int[in.length - 1][];
-    
-        for (int i = 0; i < row; i++) {
-            out[i] = in[i];
-        }
-        for (int i = row; i < out.length; i++) {
-            out[i] = in[i + 1];
-        }
-    
-        return out;
-    }
-    
-    //method for removing a column of a matrix
-    public static int[][] remove_column(int in[][], int column) {
-        if (column > in[0].length - 1)
-            return in; // column out of bounds
-    
-        int[][] out = new int[in.length][];
-    
-        for (int i = 0; i < out.length; i++) {
-            out[i] = new int[in[0].length - 1];
-    
-            for (int j = 0; j < column; j++) {
-                out[i][j] = in[i][j];
-            }
-            for (int j = column; j < out[0].length; j++) {
-                out[i][j] = in[i][j + 1];
-            }
-        }
-    
-        return out;
-    }
+		if (row > in.length - 1 || row < 0)
+			return in; // row out of bounds
+
+		int[][] out = new int[in.length - 1][];
+
+		for (int i = 0; i < row; i++) {
+			out[i] = in[i];
+		}
+		for (int i = row; i < out.length; i++) {
+			out[i] = in[i + 1];
+		}
+
+		return out;
+	}
+
+	public static int[][] remove_row(int in[][], int rows[]) {
+		int[][] out = in.clone();
+
+		Arrays.sort(rows);
+		for (int i = 0; i < rows.length; i++) {
+			out = remove_row(out, rows[i] - i);
+		}
+
+		return out;
+	}
+
+	public static int[][] remove_col(int in[][], int column) {
+		if (column > in[0].length - 1)
+			return in; // column out of bounds
+
+		int[][] out = new int[in.length][];
+
+		for (int i = 0; i < out.length; i++) {
+			out[i] = new int[in[0].length - 1];
+
+			for (int j = 0; j < column; j++) {
+				out[i][j] = in[i][j];
+			}
+			for (int j = column; j < out[0].length; j++) {
+				out[i][j] = in[i][j + 1];
+			}
+		}
+
+		return out;
+	}
+
+	public static int[][] remove_col(int in[][], int columns[]) {
+		int[][] out = in.clone();
+
+		Arrays.sort(columns);
+		for (int i = 0; i < columns.length; i++) {
+			out = remove_col(out, columns[i] - i);
+		}
+
+		return out;
+	}
 
     public static int[] add(int[] A, int[] B) {
 		int[] C = new int[A.length + B.length];
@@ -210,11 +241,11 @@ public class Algorithm {
         };
         
         int[] answers = exactCover(matrix);
-
+        System.out.println("before");
         for(int i = 0; i < answers.length; i++){
             System.out.print(answers[i] + " ");
             System.out.println();
         }
-        
+        System.out.println("after");
     }
 }
