@@ -9,27 +9,25 @@ public class Algorithm {
 
     public static int[] exactCover(int[][] matrix){
 
-
         int[] partialSolution = new int[0];
         int[] remainingRows = check_if_solved(matrix);
 
+        
+        
         if (remainingRows.length > 0) {
 			// add the remaining rows to the partialSolution
-			partialSolution = add(partialSolution, remainingRows);
+            int[] possibleSolution = { remainingRows[0]};
+			partialSolution = add(partialSolution, possibleSolution);
 			return partialSolution; // success!
 		}
+        
+        
+
 
 		if (matrix.length == 0){
 			return new int[0]; // failure, abandon branch
         }
 
-        for(int i = 0; i < matrix.length; i++){
-            for(int j = 0; j < matrix[0].length; j++){
-                System.out.print(matrix[i][j] + " ");
-            }
-            System.out.println();
-
-        }
     
         //STEP 2
         //open an array the length of the amount of columns and store the amount of 1s in each column
@@ -43,87 +41,114 @@ public class Algorithm {
                 }
                 columnsMinCalc[c - 1]= count;
             }
-            Arrays.sort(columnsMinCalc);
+        } 
+        Arrays.sort(columnsMinCalc);
 
-            //find the minimum of 1s inside the columns array
-            int min = columnsMinCalc[0];
-            System.out.println(min);
-            
-            if(min == 0){
-                
-                return new int[0];
-            }
-
-            //find the first column containing the minimum of 1's out of af all columns of the matrix deterministically
-            int selectedColumn = 0;
-            for(int i = 0; i < columnsMinCalc.length; i++){
-                if(columnsMinCalc[i] == min){
-                    selectedColumn = columnsMinCalc[i];
-                    break;
-                }
-            }
-            
-            //STEP 3
-            //create an array with the length of all possible rows containing a 1 in the selected column 
-            int[] relevantRows = new int[min];
-            int helper = 0;
-            //traverse the selected column for all the rows containing 1s and store the row inside the array
-            for(int i = 1; i < matrix.length; i++){
-                if(matrix[i][selectedColumn] == 1){
-                    relevantRows[helper++] = i;
-                }
-            }
-
-            //for each relevant row we check wether it results in exact Cover
-            for(int i = 0; i < relevantRows.length; i++){
-                int[] branch = { relevantRows[i] };
-                
-                partialSolution = add(partialSolution, branch);                
-                
-                //find out the columns that are to be deleted from the matrix and store them in an array
-                Set<Integer> columnsDelete = new HashSet<Integer> ();
-                for(int j= 1; i < matrix[relevantRows[i]].length; j++){
-                    if(matrix[relevantRows[i]][i] == 1){
-                    columnsDelete.add(j);
-                    }
-                }
-                int[]columns2Bremoved = toInt(columnsDelete);
-                
-                //find out the rows to be deleted from the matrix and store them in an array
-                Set<Integer> rowsDelete = new HashSet<Integer> ();
-                for(int j = 0; j < columns2Bremoved.length; j++){
-                    for(int k = 0; k < matrix.length; k++){
-                        if(matrix[columns2Bremoved[j]][k] == 1){
-                        rowsDelete.add(j);
-                        }
-                    }
-                }
-                int[]rows2Bremoved = toInt(rowsDelete);
-                
-           
-                int[][] newMatrix = matrix.clone();
-                //create new matrix that is reduced by the rows that are to be deleted
-                int[][]newMatrix1 = remove_row(newMatrix, rows2Bremoved);
-
-                int[][]newMatrixFinal = remove_col(newMatrix1, columns2Bremoved);
-                
-                int[] newPartialSolution = exactCover(newMatrixFinal);
-
-                if (newPartialSolution.length != 0) {
-					partialSolution = add(partialSolution, newPartialSolution);
-					return partialSolution;
-				}
-
-                // remove row r we added earlier
-				partialSolution = remove_last_element(partialSolution);
-                
-           
-                
-            
-            }
+        //find the minimum of 1s inside the columns array
+        int min = columnsMinCalc[0];
         
+            
+        if(min == 0){
+            return new int[0];
+        }
+
+        //find the first column containing the minimum of 1's out of af all columns of the matrix deterministically
+        int selectedColumn = 0;
+        int counter;
+        
+        for(int c = 1; c < matrix[0].length; c++){
+            counter = 0;
+            for(int r = 0; r < matrix.length; r++){
+               if(matrix[r][c] == 1){
+                counter++;
+               }
+            }
+            if(counter == min){
+                selectedColumn = c;
+                break;
+            }
+        }
+
+            
+        //STEP 3
+        //create an array with the length of all possible rows containing a 1 in the selected column 
+        int[] relevantRows = new int[min];
+        //traverse the selected column for all the rows containing 1s and store the row inside the array
+        int helper = 0;
+        for(int i = 0; i < matrix.length; i++){
+            if(matrix[i][selectedColumn] == 1){
+                relevantRows[helper] = i;
+                helper++;
+            }
+        }
+
+        //System.out.println(Arrays.toString(relevantRows));
+
+
+        //for each relevant row we check wether it results in exact Cover
+        for(int i = 0; i < relevantRows.length; i++){
+            
+            int[] branch = { matrix[relevantRows[i]][0] };
+            partialSolution = add(partialSolution, branch);
+
+            //System.out.println(Arrays.toString(partialSolution));
+
+                  
                 
+            //find out the columns that are to be deleted from the matrix and store them in an array
+            Set<Integer> columnsDelete = new HashSet<Integer> ();
+            for(int j= 1; j < matrix[0].length; j++){
+                if(matrix[relevantRows[i]][j] == 1){
+                columnsDelete.add(j);
+                }
+            }
+            int[]columns2Bremoved = toInt(columnsDelete);
+            
+            //System.out.println(Arrays.toString(columns2Bremoved));
                 
+            //find out the rows to be deleted from the matrix and store them in an array
+            Set<Integer> rowsDelete = new HashSet<Integer> ();
+            for(int j = 0; j < columns2Bremoved.length; j++){
+                for(int k = 0; k < matrix.length; k++){
+                    if(matrix[k][columns2Bremoved[j]] == 1){
+                        rowsDelete.add(k);
+                    }
+                }
+            }
+            int[]rows2Bremoved = toInt(rowsDelete);
+            //System.out.println(Arrays.toString(rows2Bremoved));
+           
+            int[][] newMatrix = matrix.clone();
+            //create new matrix that is reduced by the rows that are to be deleted
+            int[][]newMatrix1 = remove_row(newMatrix, rows2Bremoved);
+
+            int[][]newMatrixFinal = remove_col(newMatrix1, columns2Bremoved);
+
+            /*
+            for(int k = 0; k < newMatrixFinal.length; k++){
+                for(int l = 0; l < newMatrixFinal[k].length; l++){
+                    System.out.print(newMatrixFinal[k][l] + " ");
+                }
+                System.out.println();
+
+            }
+            */
+            
+                
+            int[] newPartialSolution = exactCover(newMatrixFinal);
+            //System.out.println(Arrays.toString(newPartialSolution));
+
+            if (newPartialSolution.length != 0) {
+				partialSolution = add(partialSolution, newPartialSolution);
+				return partialSolution;
+			}
+
+            // remove row r we added earlier
+			partialSolution = remove_last_element(partialSolution);
+                
+           
+                
+            
         }
         return new int[0];
     }
@@ -208,7 +233,7 @@ public class Algorithm {
     
     private static int[] check_if_solved(int[][] matrix) {
 		for (int i = 0; i < matrix.length; i++) {
-			for (int j = 0; j < matrix[0].length; j++) {
+			for (int j = 1; j < matrix[0].length; j++) {
 				if (matrix[i][j] == 0)
 					return new int[0];
 			}
@@ -235,17 +260,17 @@ public class Algorithm {
     public static void main(String[] args) {
         int[][] matrix = {
             { 1 , 1 , 0 , 0 , 1 },
-            { 2 , 1 , 1 , 1 , 0 },
+            { 2 , 0 , 1 , 1 , 1 },
             { 3 , 0 , 1 , 1 , 0 },
-            { 4 , 0 , 0 , 1 , 1 }
+            { 4 , 1 , 1 , 0 , 1 }
         };
         
         int[] answers = exactCover(matrix);
-        System.out.println("before");
+        
+        
         for(int i = 0; i < answers.length; i++){
             System.out.print(answers[i] + " ");
-            System.out.println();
         }
-        System.out.println("after");
+        System.out.println();
     }
 }
